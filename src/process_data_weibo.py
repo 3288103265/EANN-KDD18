@@ -1,5 +1,5 @@
 # encoding=utf-8
-import cPickle as pickle
+import pickle as pickle
 import random
 from random import *
 import numpy as np
@@ -21,12 +21,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import os.path
 from gensim.models import Word2Vec
 
-def stopwordslist(filepath = '../Data/weibo/stop_words.txt'):
+def stopwordslist(filepath = '../data/weibo/stop_words.txt'):
     stopwords = {}
     for line in open(filepath, 'r').readlines():
-        line = unicode(line, "utf-8").strip()
+        line = str(line).strip()
         stopwords[line] = 1
-    #stopwords = [line.strip() for line in open(filepath, 'r', encoding='utf-8').readlines()]
+    # stopwords = [line.strip() for line in open(filepath, 'r', encoding='utf-8').readlines()]
     return stopwords
 
 def clean_str_sst(string):
@@ -43,7 +43,7 @@ def clean_str_sst(string):
 #
 def read_image():
     image_list = {}
-    file_list = ['../Data/weibo/nonrumor_images/', '../Data/weibo/rumor_images/']
+    file_list = ['../data/weibo/nonrumor_images/', '../data/weibo/rumor_images/']
     for path in file_list:
         data_transforms = transforms.Compose([
             transforms.Resize(256),
@@ -67,7 +67,7 @@ def read_image():
     return image_list
 
 def write_txt(data):
-    f = open("../Data/weibo/top_n_data.txt", 'wb')
+    f = open("../data/weibo/top_n_data.txt", 'wb')
     for line in data:
         for l in line:
             f.write(l+"\n")
@@ -79,15 +79,15 @@ def write_data(flag, image, text_only):
 
     def read_post(flag):
         stop_words = stopwordslist()
-        pre_path = "../Data/weibo/tweets/"
+        pre_path = "../data/weibo/tweets/"
         file_list = [pre_path + "test_nonrumor.txt", pre_path + "test_rumor.txt", \
                          pre_path + "train_nonrumor.txt", pre_path + "train_rumor.txt"]
         if flag == "train":
-            id = pickle.load(open("../Data/weibo/train_id.pickle", 'rb'))
+            id = pickle.load(open("../data/weibo/train_id.pickle", 'rb'))
         elif flag == "validate":
-            id = pickle.load(open("../Data/weibo/validate_id.pickle", 'rb'))
+            id = pickle.load(open("../data/weibo/validate_id.pickle", 'rb'))
         elif flag == "test":
-            id = pickle.load(open("../Data/weibo/test_id.pickle", 'rb'))
+            id = pickle.load(open("../data/weibo/test_id.pickle", 'rb'))
 
 
         post_content = []
@@ -121,7 +121,7 @@ def write_data(flag, image, text_only):
 
                 if (i + 1) % 3 == 1:
                     line_data = []
-                    twitter_id = l.split('|')[0]
+                    twitter_id = l.split(b'|')[0]
                     line_data.append(twitter_id)
 
 
@@ -131,7 +131,7 @@ def write_data(flag, image, text_only):
                     line_data.append(l.lower())
 
                 if (i + 1) % 3 == 0:
-                    l = clean_str_sst(unicode(l, "utf-8"))
+                    l = clean_str_sst(str(l))
 
                     seg_list = jieba.cut_for_search(l)
                     new_seg_list = []
@@ -378,7 +378,7 @@ def get_data(text_only):
     test_data = write_data("test", image_list, text_only)
 
     print("loading data...")
-    # w2v_file = '../Data/GoogleNews-vectors-negative300.bin'
+    # w2v_file = '../data/GoogleNews-vectors-negative300.bin'
     vocab, all_text = load_data(train_data, valiate_data, test_data)
     # print(str(len(all_text)))
 
@@ -389,7 +389,7 @@ def get_data(text_only):
 
     #
     #
-    word_embedding_path = "../Data/weibo/w2v.pickle"
+    word_embedding_path = "../data/weibo/w2v.pickle"
 
     w2v = pickle.load(open(word_embedding_path, 'rb'))
     # print(temp)
@@ -397,7 +397,7 @@ def get_data(text_only):
     print("word2vec loaded!")
     print("num words already in word2vec: " + str(len(w2v)))
     # w2v = add_unknown_words(w2v, vocab)
-    # file_path = "../Data/weibo/event_clustering.pickle"
+    # file_path = "../data/weibo/event_clustering.pickle"
     # if not os.path.exists(file_path):
     #     train = []
     #     for l in train_data["post_text"]:
@@ -432,7 +432,7 @@ def get_data(text_only):
     # # rand_vecs = {}
     # # add_unknown_words(rand_vecs, vocab)
     W2 = rand_vecs = {}
-    w_file = open("../Data/weibo/word_embedding.pickle", "wb")
+    w_file = open("../data/weibo/word_embedding.pickle", "wb")
     pickle.dump([W, W2, word_idx_map, vocab, max_l], w_file)
     w_file.close()
     return train_data, valiate_data, test_data
@@ -450,7 +450,7 @@ def get_data(text_only):
 #     test_data = write_data("test", image_list)
 #
 #     # print("loading data...")
-#     # # w2v_file = '../Data/GoogleNews-vectors-negative300.bin'
+#     # # w2v_file = '../data/GoogleNews-vectors-negative300.bin'
 #     vocab, all_text = load_data(train_data, test_data)
 #     #
 #     # # print(str(len(all_text)))
@@ -462,7 +462,7 @@ def get_data(text_only):
 #     #
 #     # #
 #     # #
-#     # word_embedding_path = "../Data/weibo/word_embedding.pickle"
+#     # word_embedding_path = "../data/weibo/word_embedding.pickle"
 #     # if not os.path.exists(word_embedding_path):
 #     #     min_count = 1
 #     #     size = 32
@@ -483,7 +483,7 @@ def get_data(text_only):
 #     # print("num words already in word2vec: " + str(len(w2v)))
 #     # # w2v = add_unknown_words(w2v, vocab)
 #     # Whole_data = {}
-#     # file_path = "../Data/weibo/event_clustering.pickle"
+#     # file_path = "../data/weibo/event_clustering.pickle"
 #     # # if not os.path.exists(file_path):
 #     # #     data = []
 #     # #     for l in train_data["post_text"]:
@@ -520,7 +520,7 @@ def get_data(text_only):
 #     # # # rand_vecs = {}
 #     # # # add_unknown_words(rand_vecs, vocab)
 #     # W2 = rand_vecs = {}
-#     # pickle.dump([W, W2, word_idx_map, vocab, max_l], open("../Data/weibo/word_embedding.pickle", "wb"))
+#     # pickle.dump([W, W2, word_idx_map, vocab, max_l], open("../data/weibo/word_embedding.pickle", "wb"))
 #     # print("dataset created!")
 
 

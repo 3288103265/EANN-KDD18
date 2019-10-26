@@ -4,7 +4,7 @@ import time, os
 # import random
 import process_data_weibo as process_data
 import copy
-import cPickle as pickle
+import pickle as pickle
 from random import sample
 import torchvision
 from sklearn.model_selection import train_test_split
@@ -502,7 +502,7 @@ def word2vec(post, word_id_map, W):
 def load_data(args):
     train, validate, test = process_data.get_data(args.text_only)
     #print(train[4][0])
-    word_vector_path = '../Data/weibo/word_embedding.pickle'
+    word_vector_path = '../data/weibo/word_embedding.pickle'
     f = open(word_vector_path, 'rb')
     weight = pickle.load(f)  # W, W2, word_idx_map, vocab
     W, W2, word_idx_map, vocab, max_len = weight[0], weight[1], weight[2], weight[3], weight[4]
@@ -537,9 +537,9 @@ def transform(event):
 if __name__ == '__main__':
     parse = argparse.ArgumentParser()
     parser = parse_arguments(parse)
-    train = '../Data/weibo/train.pickle'
-    test = '../Data/weibo/test.pickle'
-    output = '../Data/weibo/output/'
+    train = '../data/weibo/train.pickle'
+    test = '../data/weibo/test.pickle'
+    output = '../data/weibo/output/'
     args = parser.parse_args([train, test, output])
     #    print(args)
     main(args)
