@@ -160,7 +160,8 @@ def write_data(flag, image, text_only):
             f.close()
             # print(data)
             #     return post_content
-        
+        # TODO: data shouldn't be empty.
+        assert data
         data_df = pd.DataFrame(np.array(data), columns=column)
         write_txt(top_data)
 
@@ -336,7 +337,7 @@ def load_bin_vec(fname, vocab):
         header = f.readline()
         vocab_size, layer1_size = map(int, header.split())
         binary_len = np.dtype('float32').itemsize * layer1_size
-        for line in xrange(vocab_size):
+        for line in range(vocab_size):
             word = []
             while True:
                 ch = f.read(1)
