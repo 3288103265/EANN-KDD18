@@ -9,7 +9,7 @@ filename4 = "/home/wangpenghui/Datasets/tweets/test_nonrumor.txt"
 
 def dump_inputs(filename, label):
     """dump file into dataset, [{},{},{}......{}]"""
-    dataset = []
+    dataset = dict()
     file = open(filename, 'r')
     n = 0
     for line in file:

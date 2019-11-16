@@ -24,3 +24,6 @@ data_transforms = transforms.Compose([
 batch_size = 16
 dataset = ImageFolder(root='/home/wangpenghui/Datasets/New folder/',transform=data_transforms)
 
+
+
+
