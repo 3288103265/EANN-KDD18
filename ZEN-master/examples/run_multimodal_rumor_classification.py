@@ -21,22 +21,29 @@ from utils_sequence_level_task import simple_accuracy, compute_metrics
 class FusionModel(nn.Module):
     """Fuse vgg and ZEN"""
 
-    def __init__(self, bert_model, num_labels=10):
+    def __init__(self, bert_model, num_labels=2):
         super(FusionModel, self).__init__()
         vgg = models.vgg19_bn()
         fc_features = vgg.classifier[-1].in_features
-        vgg.classifier[-1] = nn.Linear(fc_features, num_labels)
+        vgg.classifier[-1] = nn.Linear(fc_features, 32)
         self.vgg = vgg
-        self.zen = ZenForSequenceClassification.from_pretrained(bert_model, num_labels=num_labels)
+        zen = ZenForSequenceClassification.from_pretrained(bert_model, num_labels=num_labels)
+        for param in zen.parameters():
+            param.requires_grad = False
+        zen.classifier = nn.Linear(768, 32)
+        self.zen = zen
         self.num_labels = num_labels
+        self.linear = nn.Linear(64, 2)
 
     def forward(self, batched_imgs, input_ids, input_ngram_ids, ngram_position_matrix, token_type_ids=None,
                 attention_mask=None, labels=None, head_mask=None):
-        zen_logits = self.zen(input_ids, input_ngram_ids, ngram_position_matrix, token_type_ids=None,
+
+        zen_out = self.zen(input_ids, input_ngram_ids, ngram_position_matrix, token_type_ids=None,
                               attention_mask=None, labels=None, head_mask=None)
         # 不给 label，输出logits。
-        vgg_logits = self.vgg(batched_imgs)
-        all_logits = zen_logits + vgg_logits
+        vgg_out = self.vgg(batched_imgs)
+        all_out = torch.cat((zen_out, vgg_out), dim=1)
+        all_logits = self.linear(all_out)
 
         if labels is not None:
             loss_fct = nn.CrossEntropyLoss()
@@ -47,39 +54,26 @@ class FusionModel(nn.Module):
 
 
 # Prepare data
-data_transforms = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
 
-F = open('all_dict.pkl', 'rb')
-all_dict = pickle.load(F)
-F.close()
-all_sets = FusionFolder("/home/wangpenghui/Datasets/WeiboRumorSet/", all_dict, transform=data_transforms)
+F_train = open('train_set.pkl', 'rb')
+train_dataset = pickle.load(F_train)
+F_train.close()
 
-# split dataset into trainset and test set.
-train_size = int(0.6 * len(all_sets))
-test_size = len(all_sets) - train_size
-torch.manual_seed(1000)
-train_dataset, test_dataset = torch.utils.data.random_split(all_sets, [train_size, test_size])
-F = open('train_set.pkl', 'wb')
-pickle.dump(train_dataset, F)
-F.close()
-train_loader = DataLoader(train_dataset, batch_size=12, num_workers=4, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=12, num_workers=4, shuffle=True)
+F_test = open('test_set.pkl', 'rb')
+test_dataset = pickle.load(F_test)
+F_test.close()
+
+train_loader = DataLoader(train_dataset, batch_size=16, num_workers=4, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=16, num_workers=4, shuffle=True)
 
 
 #set parameters.
-num_epoches = 30
-bert_model = '/home/wangpenghui/EANN-KDD18/ZEN-master/models/ZEN_ft_DC_v0.1.0'
+num_epoches = 10
+bert_model = '/home/wangpenghui/EANN-KDD18/ZEN-master/models/output/checkpoint-6750'
 
-fusion_model = FusionModel(bert_model, num_labels=10).cuda()
+fusion_model = FusionModel(bert_model, num_labels=2).cuda()
 
-optimizer = optim.SGD([{'params': fusion_model.vgg.parameters()},
-                           {'params': fusion_model.zen.classifier.parameters(), 'lr': 7e-4}],
-                          lr=0.001, momentum=0.9)
+optimizer = optim.SGD(filter(lambda p: p.requires_grad, fusion_model.parameters()), lr=0.0001, momentum=0.9)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 n_gpu = torch.cuda.device_count()
